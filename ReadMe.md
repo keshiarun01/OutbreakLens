@@ -1,0 +1,243 @@
+# 🦠 OutbreakLens
+
+**A real-time disease outbreak intelligence platform built with modern data engineering practices.**
+
+OutbreakLens ingests, transforms, and analyzes global disease outbreak data from multiple public health sources — delivering clean, analytics-ready datasets through a fully orchestrated medallion architecture.
+
+---
+
+## 🏗️ Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          DATA SOURCES                                   │
+│                                                                         │
+│   🌐 WHO Disease         📊 Our World in Data      🗺️ GeoNames         │
+│      Outbreak News          (COVID-19, Mpox)          (Country Ref)     │
+│      (REST API)             (CSV / GitHub)            (TSV Download)    │
+└────────┬──────────────────────┬───────────────────────┬─────────────────┘
+         │                      │                       │
+         ▼                      ▼                       ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    🔄 ORCHESTRATION (Apache Airflow)                     │
+│                                                                         │
+│   ┌──────────────┐  ┌──────────────────┐  ┌─────────────────────┐      │
+│   │ WHO DON DAG  │  │  OWID Ingest DAG │  │ GeoNames Ingest DAG │      │
+│   │  (Daily)     │  │   (Weekly)       │  │    (Monthly)        │      │
+│   └──────┬───────┘  └────────┬─────────┘  └──────────┬──────────┘      │
+│          │                   │                       │                  │
+│          └───────────┬───────┴───────────────────────┘                  │
+│                      ▼                                                  │
+│            ┌───────────────────┐                                        │
+│            │ Bronze→PG Loader  │                                        │
+│            │      DAG          │                                        │
+│            └─────────┬─────────┘                                        │
+└──────────────────────┼──────────────────────────────────────────────────┘
+                       │
+         ┌─────────────┼─────────────┐
+         ▼             ▼             ▼
+┌─────────────┐ ┌────────────┐ ┌──────────┐
+│    MinIO    │ │ PostgreSQL │ │  Qdrant  │
+│ (Data Lake) │ │(Warehouse) │ │(VectorDB)│
+│             │ │            │ │ Phase 2  │
+│ bronze/     │ │ bronze.*   │ └──────────┘
+│ ├─ who_don/ │ │ silver.*   │
+│ ├─ owid/    │ │ gold.*     │
+│ └─ geonames/│ │            │
+└─────────────┘ └─────┬──────┘
+                      │
+                      ▼
+         ┌────────────────────────┐
+         │   dbt Transformations  │
+         │   (27 tests passing)   │
+         └────────────────────────┘
+```
+
+---
+
+## 🥇 Medallion Architecture
+
+OutbreakLens follows the **Bronze → Silver → Gold** medallion pattern:
+
+### 🟤 Bronze Layer (Raw Ingestion)
+Raw data exactly as received from sources. Stored as Parquet files in MinIO and loaded into PostgreSQL with all columns as TEXT — no type enforcement at this stage.
+
+| Table | Source | Records | Refresh |
+|-------|--------|---------|---------|
+| `bronze.owid_covid` | Our World in Data | ~175K | Weekly |
+| `bronze.owid_mpox` | Our World in Data | ~85K | Weekly |
+| `bronze.who_don_reports` | WHO REST API | 500 | Daily |
+| `bronze.geonames_countries` | GeoNames | 252 | Monthly |
+
+### ⚪ Silver Layer (Cleaned & Normalized)
+Type-cast, validated, and enriched data. HTML stripped, dates parsed, countries joined to reference dimensions.
+
+| Model | Description |
+|-------|-------------|
+| `silver.silver_location_dim` | Country reference with ISO codes, WHO regions, population |
+| `silver.silver_owid_covid` | Cleaned COVID metrics joined to location dimension |
+| `silver.silver_owid_mpox` | Cleaned mpox metrics joined to location dimension |
+| `silver.silver_who_don_reports` | WHO reports with stripped HTML, parsed dates, full URLs |
+| `silver.disease_dim` | Disease reference seed (15 diseases with metadata) |
+
+### 🟡 Gold Layer (Analytics-Ready)
+Business logic applied. Aggregations, trends, alerts — ready for dashboards and AI agents.
+
+| Model | Description |
+|-------|-------------|
+| `gold.gold_active_outbreaks` | Active outbreaks in last 90 days with trend direction |
+| `gold.gold_disease_trend_weekly` | Weekly case/death trends with 4-week rolling averages |
+| `gold.gold_outbreak_timeline` | Sequenced WHO report timeline with gap analysis |
+| `gold.gold_alert_signals` | Automated alerts: surges, rapid growth, high mortality |
+
+---
+
+## 📊 dbt Lineage Graph
+
+The complete data flow from source to analytics, generated by dbt:
+
+![dbt Lineage Graph](docs/lineage-graph.png)
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Orchestration** | Apache Airflow 2.10 | Schedule and monitor data pipelines |
+| **Data Lake** | MinIO | S3-compatible object storage for raw Parquet files |
+| **Data Warehouse** | PostgreSQL 16 | SQL-queryable storage for bronze/silver/gold layers |
+| **Transformations** | dbt 1.10 | SQL-based transforms with testing and documentation |
+| **Vector Database** | Qdrant | Semantic search over outbreak reports (Phase 2) |
+| **Containerization** | Docker Compose | One-command infrastructure setup |
+| **Language** | Python 3.11 | Ingestion scripts and pipeline logic |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker Desktop installed and running
+- Python 3.10+ with `pip`
+- Git
+
+### 1. Clone and Setup
+```bash
+git clone https://github.com/yourusername/outbreaklens.git
+cd outbreaklens
+python3 -m venv .venv
+source .venv/bin/activate
+pip install dbt-postgres==1.9.0
+```
+
+### 2. Start Infrastructure
+```bash
+docker compose build
+docker compose up -d
+```
+
+### 3. Verify Services
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| Airflow UI | http://localhost:8080 | admin / admin |
+| MinIO Console | http://localhost:9001 | outbreaklens / outbreaklens123 |
+| Qdrant Dashboard | http://localhost:6333/dashboard | — |
+
+### 4. Run Ingestion
+Trigger DAGs manually in the Airflow UI in this order:
+1. `bronze_owid_ingestion`
+2. `bronze_who_don_ingestion`
+3. `bronze_geonames_ingestion`
+4. `bronze_load_to_postgres`
+
+### 5. Run Transformations
+```bash
+cd dbt
+dbt seed --profiles-dir .
+dbt run --profiles-dir .
+dbt test --profiles-dir .
+```
+
+---
+
+## 📁 Project Structure
+
+```
+outbreaklens/
+├── airflow/
+│   ├── dags/                        # Airflow DAG definitions
+│   │   ├── dag_bronze_owid.py       # OWID ingestion DAG
+│   │   ├── dag_bronze_who_don.py    # WHO DON ingestion DAG
+│   │   ├── dag_bronze_geonames.py   # GeoNames ingestion DAG
+│   │   └── dag_bronze_to_postgres.py# MinIO → PostgreSQL loader DAG
+│   ├── logs/
+│   └── plugins/
+├── dbt/
+│   ├── models/
+│   │   ├── bronze/
+│   │   │   └── sources.yml          # Bronze source definitions
+│   │   ├── silver/
+│   │   │   ├── silver_location_dim.sql
+│   │   │   ├── silver_owid_covid.sql
+│   │   │   ├── silver_owid_mpox.sql
+│   │   │   ├── silver_who_don_reports.sql
+│   │   │   └── schema.yml           # Silver tests & docs
+│   │   └── gold/
+│   │       ├── gold_active_outbreaks.sql
+│   │       ├── gold_disease_trend_weekly.sql
+│   │       ├── gold_outbreak_timeline.sql
+│   │       ├── gold_alert_signals.sql
+│   │       └── schema.yml           # Gold tests & docs
+│   ├── seeds/
+│   │   └── disease_dim.csv          # Disease reference data
+│   ├── macros/
+│   │   └── generate_schema_name.sql # Custom schema naming
+│   ├── dbt_project.yml
+│   └── profiles.yml
+├── ingestion/
+│   ├── bronze_owid.py               # OWID data downloader
+│   ├── bronze_who_don.py            # WHO API client
+│   ├── bronze_geonames.py           # GeoNames downloader
+│   └── bronze_to_postgres.py        # MinIO → PostgreSQL loader
+├── docker-init/
+│   └── init-db.sql                  # PostgreSQL initialization
+├── docker-compose.yml
+├── Dockerfile.airflow
+├── requirements-airflow.txt
+└── README.md
+```
+
+---
+
+## 🧪 Data Quality
+
+**27 dbt tests** validate the entire pipeline:
+
+- **Uniqueness**: No duplicate report IDs, country codes, or disease IDs
+- **Not-null**: Critical fields like dates, names, and IDs are always present
+- **Accepted values**: Disease IDs, continent codes, alert types, and severity levels are constrained to valid values
+
+---
+
+## 🗺️ Roadmap
+
+- [x] **Phase 1: Data Warehousing** — Bronze/Silver/Gold pipeline with Airflow + dbt
+- [ ] **Phase 2: Model Building** — Embeddings, Qdrant vector store, RAG agent with LLM
+- [ ] **Phase 3: Deployment** — Streamlit dashboard, LangFuse observability, demo video
+
+---
+
+## 📝 Lessons Learned
+
+Building this project surfaced real-world data engineering challenges:
+
+- **Dependency conflicts**: Airflow bundles SQLAlchemy 1.4, but pandas 2.x expects 2.0 — solved by using raw psycopg2 for database loading
+- **Memory management**: Large CSV files (500K+ rows) caused OOM kills in Docker — solved with chunked reading and filtering during download
+- **API inconsistency**: WHO API returns mixed types (strings vs dicts) for the same fields — solved with defensive `safe_get_text()` helpers
+- **Bronze layer philosophy**: Storing all columns as TEXT in bronze eliminates type-casting errors and follows "store first, clean later" best practice
+
+---
+
+## 📄 License
+
+MIT

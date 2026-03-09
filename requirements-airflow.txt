@@ -1,0 +1,10 @@
+
+# Dependencies for Airflow DAGs
+pandas==2.2.3
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0
+deltalake==0.22.3
+minio==7.2.12
+
+python-dotenv==1.0.1

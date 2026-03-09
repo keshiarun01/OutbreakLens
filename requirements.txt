@@ -1,0 +1,29 @@
+
+# Airflow (we'll run this via Docker, but useful for local dev)
+apache-airflow==2.10.5
+
+# Data processing
+pandas==2.2.3
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0
+
+# Delta Lake (for bronze/silver/gold table storage)
+deltalake==0.22.3
+
+# MinIO (S3-compatible client)
+boto3==1.35.86
+minio==7.2.12
+
+# PostgreSQL
+psycopg2-binary==2.9.10
+sqlalchemy==2.0.36
+
+# dbt with PostgreSQL adapter
+dbt-postgres==1.9.0
+
+# Data quality
+soda-core-postgres==3.3.22
+
+# Utilities
+python-dotenv==1.0.1

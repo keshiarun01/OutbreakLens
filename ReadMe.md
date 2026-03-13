@@ -205,7 +205,7 @@ User Question
 
 The complete data flow from bronze sources to gold analytics models:
 
-![dbt Lineage Graph](docs/lineage-graph.png)
+![dbt Lineage Graph](docs/image.png)
 
 ---
 

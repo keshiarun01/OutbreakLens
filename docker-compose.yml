@@ -19,7 +19,6 @@ x-airflow-common: &airflow-common
   build:
     context: .
     dockerfile: Dockerfile.airflow
-  mem_limit: 4g
   environment:
     # Tells Airflow to use PostgreSQL instead of default SQLite
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://outbreaklens:outbreaklens123@postgres:5432/airflow
@@ -40,6 +39,7 @@ x-airflow-common: &airflow-common
     POSTGRES_DB: outbreaklens
     POSTGRES_HOST: postgres
     POSTGRES_PORT: "5432"
+    OPENAI_API_KEY: ${OPENAI_API_KEY}
   volumes:
     # Mount your local DAGs folder into the container so Airflow
     # picks up your pipeline code without rebuilding the image.
@@ -48,6 +48,8 @@ x-airflow-common: &airflow-common
     - ./airflow/plugins:/opt/airflow/plugins
     # Mount ingestion scripts so DAGs can import them
     - ./ingestion:/opt/airflow/ingestion
+    # Mount RAG modules for Phase 2 embedding pipeline
+    - ./rag:/opt/airflow/rag
   networks:
     - outbreaklens-net
   depends_on:

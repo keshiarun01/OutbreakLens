@@ -1,10 +1,20 @@
-
 # Dependencies for Airflow DAGs
+# NOTE: Do NOT include sqlalchemy or psycopg2 here.
+# Airflow bundles its own compatible versions of these.
+
+# ── Phase 1: Data ingestion ──
 pandas==2.2.3
 requests==2.32.3
 beautifulsoup4==4.12.3
 lxml==5.3.0
 deltalake==0.22.3
 minio==7.2.12
-
 python-dotenv==1.0.1
+
+# ── Phase 2: Embeddings & Vector Store ──
+sentence-transformers==3.3.1
+qdrant-client==1.12.1
+openai==1.58.1
+langchain==0.3.14
+langchain-openai==0.3.0
+langchain-community==0.3.14

@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: gold_active_outbreaks
+    description: "Currently active disease outbreaks by country (last 90 days)"
+    columns:
+      - name: country_name
+        tests:
+          - not_null
+      - name: disease_id
+        tests:
+          - not_null
+
+  - name: gold_disease_trend_weekly
+    description: "Weekly case/death trends by disease and WHO region"
+    columns:
+      - name: disease_id
+        tests:
+          - not_null
+      - name: week_start
+        tests:
+          - not_null
+
+  - name: gold_outbreak_timeline
+    description: "Timeline of WHO Disease Outbreak News reports"
+    columns:
+      - name: report_id
+        tests:
+          - unique
+          - not_null
+
+  - name: gold_alert_signals
+    description: "Alert flags for concerning outbreak patterns"
+    columns:
+      - name: alert_type
+        tests:
+          - accepted_values:
+              values: ['SURGE', 'RAPID_GROWTH', 'HIGH_MORTALITY']
+      - name: severity
+        tests:
+          - accepted_values:
+              values: ['critical', 'high', 'medium']

@@ -1,0 +1,35 @@
+
+# dbt/models/bronze/sources.yml
+# ─────────────────────────────────────────────────
+# Sources tell dbt about tables that already exist in the
+# database (i.e., tables NOT created by dbt itself).
+# Our bronze tables were created by the Python ingestion scripts.
+#
+# Once defined here, you reference them in SQL models with:
+#   {{ source('bronze', 'owid_covid') }}
+# instead of hardcoding:
+#   bronze.owid_covid
+#
+# Why? dbt tracks dependencies. If a source changes,
+# dbt knows which downstream models are affected.
+# ─────────────────────────────────────────────────
+
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    description: "Raw data ingested from external sources into the bronze layer"
+
+    tables:
+      - name: owid_covid
+        description: "COVID-19 metrics from Our World in Data (last 2 years)"
+
+      - name: owid_mpox
+        description: "Mpox (monkeypox) metrics from Our World in Data (last 2 years)"
+
+      - name: who_don_reports
+        description: "WHO Disease Outbreak News reports fetched from WHO REST API"
+
+      - name: geonames_countries
+        description: "Country reference data from GeoNames (ISO codes, coordinates, population)"

@@ -1,0 +1,45 @@
+# dbt/dbt_project.yml
+# ─────────────────────────────────────────────────
+# This is the main config file for your dbt project.
+# It tells dbt where to find models, what schema
+# each layer should write to, and how to materialize them.
+# ─────────────────────────────────────────────────
+
+name: "outbreaklens_dbt"
+version: "1.0.0"
+
+profile: "outbreaklens_dbt"       # must match the profile name in profiles.yml
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  outbreaklens_dbt:
+    # ── Bronze models ──
+    # Materialized as views because bronze is just a passthrough
+    # from the raw ingested data. Views save storage.
+    bronze:
+      +schema: bronze
+      +materialized: view
+
+    # ── Silver models ──
+    # Materialized as tables because these are cleaned/transformed
+    # and queried frequently. Tables are faster to read.
+    silver:
+      +schema: silver
+      +materialized: table
+
+    # ── Gold models ──
+    # Also tables — these are the final analytics models
+    # that power dashboards and the RAG agent's SQL chain.
+    gold:
+      +schema: gold
+      +materialized: table
+
+seeds:
+  outbreaklens_dbt:
+    +schema: silver

@@ -1,0 +1,21 @@
+
+# dbt/profiles.yml
+# ─────────────────────────────────────────────────
+# This tells dbt HOW to connect to your database.
+# We define two targets:
+#   - dev  → for local development (what you use day-to-day)
+#   - prod → could point to a production DB later
+# ─────────────────────────────────────────────────
+
+outbreaklens_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost          # localhost because we're running dbt from Mac, not inside Docker
+      port: 5432
+      user: outbreaklens
+      password: outbreaklens123
+      dbname: outbreaklens
+      schema: silver           # default schema — dbt will create tables here
+      threads: 4               # number of parallel SQL queries dbt can run

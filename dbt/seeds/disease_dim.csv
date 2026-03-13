@@ -1,0 +1,16 @@
+disease_id,disease_name,disease_aliases,transmission_type,typical_cfr_pct,icd11_code
+covid19,COVID-19,"SARS-CoV-2;coronavirus;covid",Respiratory,1.0,RA01
+mpox,Mpox,"monkeypox;MPXV;MPX",Contact,3.6,1E71
+ebola,Ebola virus disease,"EVD;Ebola hemorrhagic fever",Contact,50.0,1D60
+cholera,Cholera,"Vibrio cholerae",Waterborne,1.0,1A00
+mers,MERS,"MERS-CoV;Middle East respiratory syndrome",Respiratory,34.0,RA02
+dengue,Dengue,"dengue fever;DENV;breakbone fever",Vector-borne,2.5,1D20
+yellow_fever,Yellow fever,"YF",Vector-borne,20.0,1D47
+nipah,Nipah virus infection,"NiV;Nipah",Zoonotic,65.0,1D64
+diphtheria,Diphtheria,"Corynebacterium diphtheriae",Respiratory,10.0,1C17
+influenza,Influenza,"flu;seasonal influenza;H1N1;H3N2;H5N1;avian influenza;bird flu",Respiratory,0.1,1E30
+marburg,Marburg virus disease,"MVD;Marburg hemorrhagic fever",Contact,50.0,1D61
+plague,Plague,"Yersinia pestis;bubonic plague;pneumonic plague",Vector-borne,30.0,1B93
+measles,Measles,"rubeola",Respiratory,1.0,1E50
+meningitis,Meningitis,"meningococcal disease;Neisseria meningitidis",Respiratory,10.0,1D00
+hepatitis_e,Hepatitis E,"HEV",Waterborne,1.0,1E51

@@ -1,0 +1,93 @@
+
+# dbt/models/silver/schema.yml
+# ─────────────────────────────────────────────────
+# Schema files define tests and documentation for your models.
+# dbt tests run automatically and fail the pipeline if data
+# quality issues are detected.
+#
+# Test types:
+#   - unique: no duplicate values in this column
+#   - not_null: no NULL values allowed
+#   - accepted_values: column must only contain these values
+#   - relationships: foreign key must exist in the referenced table
+# ─────────────────────────────────────────────────
+
+version: 2
+
+models:
+  - name: silver_location_dim
+    description: "Cleaned country reference table with ISO codes and WHO regions"
+    columns:
+      - name: country_iso2
+        description: "ISO 3166-1 alpha-2 country code"
+        tests:
+          - unique
+          - not_null
+      - name: country_iso3
+        description: "ISO 3166-1 alpha-3 country code"
+        tests:
+          - unique
+      - name: country_name
+        tests:
+          - not_null
+      - name: continent_code
+        tests:
+          - accepted_values:
+              values: ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN']
+
+  - name: silver_owid_covid
+    description: "Cleaned COVID-19 case and death metrics by country and date"
+    columns:
+      - name: country_name
+        tests:
+          - not_null
+      - name: report_date
+        tests:
+          - not_null
+      - name: disease_id
+        tests:
+          - accepted_values:
+              values: ['covid19']
+
+  - name: silver_owid_mpox
+    description: "Cleaned mpox case and death metrics by country and date"
+    columns:
+      - name: country_name
+        tests:
+          - not_null
+      - name: report_date
+        tests:
+          - not_null
+      - name: disease_id
+        tests:
+          - accepted_values:
+              values: ['mpox']
+
+  - name: silver_who_don_reports
+    description: "Cleaned WHO Disease Outbreak News reports with stripped HTML"
+    columns:
+      - name: report_id
+        tests:
+          - unique
+          - not_null
+      - name: title
+        tests:
+          - not_null
+      - name: publication_date
+        tests:
+          - not_null
+
+seeds:
+  - name: disease_dim
+    description: "Reference table of diseases with metadata"
+    columns:
+      - name: disease_id
+        tests:
+          - unique
+          - not_null
+      - name: disease_name
+        tests:
+          - not_null
+      - name: transmission_type
+        tests:
+          - not_null
